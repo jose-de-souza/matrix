@@ -1,14 +1,61 @@
 {
+    // Specifies the schema version for tasks.json, used by Visual Studio Code
+    // to interpret the task configuration. Version 2.0.0 is standard for modern
+    // VS Code build tasks, ensuring compatibility with task runners.
     "version": "2.0.0",
+    
+    // Array of tasks to be executed by VS Code's build system.
+    // Tasks define automated commands for building, testing, or deploying the project.
     "tasks": [
         {
+            // Human-readable name for the task, displayed in VS Code's task runner.
+            // "build" indicates this task compiles the project into an executable.
             "label": "build",
+            
+            // Specifies the task type as a shell command, meaning it runs in a
+            // command-line environment (e.g., cmd.exe on Windows). This allows
+            // execution of external tools like rc.exe and cl.exe.
             "type": "shell",
+            
+            // Command to execute for building the project.
+            // Combines multiple commands using && for sequential execution in a
+            // Windows command prompt. The command initializes the MSVC environment,
+            // compiles the resource file, and compiles/links the C code.
             "command": "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\" && rc /fo matrix.res matrix.rc && cl /Fe:matrix.scr /MT /Zi /Od /DUNICODE /D_UNICODE /W4 /EHsc /TC src\\main.c src\\matrix.c /link /MACHINE:X86 user32.lib gdi32.lib kernel32.lib matrix.res",
+            
+            // Detailed breakdown of the command:
+            // 1. vcvars32.bat: Sets up the MSVC 32-bit compiler environment,
+            //    adding cl.exe, rc.exe, and link.exe to the PATH and setting
+            //    necessary environment variables for the Windows SDK.
+            // 2. rc /fo matrix.res matrix.rc: Compiles the resource script
+            //    (matrix.rc) into a resource file (matrix.res), embedding the icon.
+            //    /fo specifies the output file name.
+            // 3. cl: MSVC compiler command with options:
+            //    - /Fe:matrix.scr: Names the output executable matrix.scr.
+            //    - /MT: Uses static multithreaded runtime for portability.
+            //    - /Zi: Generates debugging information (PDB file).
+            //    - /Od: Disables optimizations for easier debugging.
+            //    - /DUNICODE /D_UNICODE: Enables Unicode support.
+            //    - /W4: Sets warning level 4 for strict code checking.
+            //    - /EHsc: Enables C++ exception handling (required for C compatibility).
+            //    - /TC: Treats source files as C code.
+            //    - src\\main.c src\\matrix.c: Specifies source files.
+            //    - /link: Passes options to the linker.
+            //    - /MACHINE:X86: Targets 32-bit architecture.
+            //    - user32.lib gdi32.lib kernel32.lib: Links Windows API libraries.
+            //    - matrix.res: Includes the compiled resource file.
+            
+            // Group configuration marks this task as part of the build system.
+            // "build" kind integrates with VS Code's build commands (Ctrl+Shift+B),
+            // and isDefault makes it the primary build task.
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
+            
+            // Problem matcher integrates compiler errors with VS Code's UI.
+            // $msCompile parses MSVC error messages, displaying them in the
+            // Problems panel for easy navigation to code issues.
             "problemMatcher": [
                 "$msCompile"
             ]

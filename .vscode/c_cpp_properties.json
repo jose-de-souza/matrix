@@ -1,21 +1,60 @@
 {
+    // Array of IntelliSense configurations for C/C++ development in Visual Studio Code.
+    // These settings customize code completion, error checking, and navigation for the
+    // C/C++ extension, tailoring it to the project's build environment.
     "configurations": [
         {
+            // Name of the configuration, displayed in VS Code's UI.
+            // "Win32" indicates this is for a 32-bit Windows application.
             "name": "Win32",
+            
+            // Paths for header files used by IntelliSense.
+            // ${workspaceFolder}/** includes all files in the project directory
+            // and subdirectories recursively, ensuring matrix.h, charset.h, and
+            // Windows SDK headers (via system include paths) are available for
+            // code completion and navigation.
             "includePath": [
                 "${workspaceFolder}/**"
             ],
+            
+            // Preprocessor definitions for IntelliSense.
+            // _DEBUG enables debug-specific code paths (though unused in this project).
+            // UNICODE and _UNICODE enable wide-character support, matching the /DUNICODE
+            // and /D_UNICODE flags in the build command for consistent behavior.
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
+            
+            // Specifies the Windows SDK version for IntelliSense.
+            // 10.0.26100.0 aligns with modern Windows 10/11 SDKs, ensuring accurate
+            // Windows API definitions for functions like CreateWindowExW.
             "windowsSdkVersion": "10.0.26100.0",
+            
+            // Path to the MSVC compiler (cl.exe) for IntelliSense.
+            // Specifying cl.exe ensures IntelliSense uses MSVC's parsing rules,
+            // improving accuracy for Windows-specific code and macros.
             "compilerPath": "cl.exe",
+            
+            // C standard used for parsing code. c17 is the latest C standard
+            // (C17), ensuring modern C features are recognized by IntelliSense.
+            // This project uses C99/C17-compatible features like designated initializers.
             "cStandard": "c17",
+            
+            // C++ standard, included for completeness but unused as this is a C project.
+            // c++17 is a reasonable default if C++ code were added later.
             "cppStandard": "c++17",
+            
+            // IntelliSense mode, set to windows-msvc-x64 for MSVC compatibility.
+            // Despite targeting x86 (/MACHINE:X86), x64 mode is used as modern
+            // VS Code runs on 64-bit systems, and MSVC's IntelliSense supports both
+            // architectures. This ensures accurate code analysis and suggestions.
             "intelliSenseMode": "windows-msvc-x64"
         }
     ],
+    
+    // Version of the c_cpp_properties.json schema, ensuring compatibility
+    // with the C/C++ extension. Version 4 is the current standard.
     "version": 4
 }

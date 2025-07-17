@@ -1,15 +1,51 @@
 {
+    // Specifies the schema version for launch.json, used by Visual Studio Code
+    // to configure debugging sessions. Version 0.2.0 is standard for modern
+    // VS Code debugging configurations.
     "version": "0.2.0",
+    
+    // Array of debugging configurations, defining how VS Code launches the debugger.
     "configurations": [
         {
+            // Human-readable name for the debug configuration, displayed in
+            // VS Code's debug panel. Indicates this is for debugging the 32-bit
+            // Matrix application.
             "name": "Debug Matrix (32-bit)",
+            
+            // Specifies the debugger type. cppvsdbg is the Visual Studio Windows
+            // Debugger, suitable for MSVC-compiled C programs on Windows.
             "type": "cppvsdbg",
+            
+            // Request type "launch" starts a new instance of the program under
+            // the debugger, as opposed to "attach" (for existing processes).
             "request": "launch",
+            
+            // Path to the executable to debug, using VS Code variable substitution.
+            // ${workspaceFolder} resolves to the project root, pointing to matrix.exe.
+            // Note: The build task produces matrix.scr, so ensure consistency or
+            // rename the output if debugging matrix.scr.
             "program": "${workspaceFolder}\\matrix.exe",
+            
+            // Command-line arguments passed to the program. Empty here as the
+            // screensaver doesn't require arguments for debugging.
             "args": [],
+            
+            // If true, pauses execution at the program's entry point (WinMain).
+            // Set to false to run until a breakpoint, speeding up debugging startup.
             "stopAtEntry": false,
+            
+            // Working directory for the debug session.
+            // ${workspaceFolder} ensures the debugger runs in the project root,
+            // where matrix_icon.ico and other resources are located.
             "cwd": "${workspaceFolder}",
+            
+            // Environment variables for the debug session. Empty here as no
+            // specific variables are needed beyond the system environment.
             "environment": [],
+            
+            // Specifies the console type for program output.
+            // externalTerminal opens a separate Windows Command Prompt for output,
+            // useful for observing runtime behavior or errors outside VS Code.
             "console": "externalTerminal"
         }
     ]
