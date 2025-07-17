@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Matrix (32-bit)",
+            "type": "shell",
+            "command": "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\" && cl /Fe:matrix.exe /MT /Zi /Od /DUNICODE /D_UNICODE /W4 /EHsc /TC src\\main.c src\\matrix.c /link /MACHINE:X86 user32.lib gdi32.lib kernel32.lib",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$msCompile"],
+            "detail": "Compile Matrix screensaver as a 32-bit executable"
+        }
+    ]
+}

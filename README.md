@@ -1,12 +1,12 @@
 # Matrix
 
 ## Building
-Always clear the cache first:
 ```bash
-rmdir /s /q .zig-cache
+
 ```
 
+## Running
 ```bash
-zig build --verbose
+
 ```
 
