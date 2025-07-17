@@ -299,4 +299,4 @@ Common issues and solutions:
 For specific errors, check the build output in Visual Studio Code's terminal or run the build command manually to capture error messages.
 
 ## License
-This project is licensed under the MIT License. See the `LICENSE` file for details (create one if contributing to a public repository).
+This project is licensed under the MIT License.
