@@ -4,7 +4,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\" && rc /fo matrix.res matrix.rc && cl /Fe:matrix.exe /MT /Zi /Od /DUNICODE /D_UNICODE /W4 /EHsc /TC src\\main.c src\\matrix.c /link /MACHINE:X86 user32.lib gdi32.lib kernel32.lib matrix.res",
+            "command": "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\" && rc /fo matrix.res matrix.rc && cl /Fe:matrix.exe /MT /Zi /Od /DUNICODE /D_UNICODE /W4 /EHsc /TC src\\main.c src\\matrix.c /link /MACHINE:X86 user32.lib gdi32.lib kernel32.lib matrix.res && rename matrix.exe matrix.scr",
             "group": {
                 "kind": "build",
                 "isDefault": true
