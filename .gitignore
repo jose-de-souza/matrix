@@ -5,6 +5,8 @@
 *.pdb
 *.pfx
 *.pem
+*.scr
+*.res
 
 ### macOS ###
 # General

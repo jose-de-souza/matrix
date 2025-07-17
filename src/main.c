@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include "matrix.h"
+#include "../resource.h" // Include the new resource header
 
 static Matrix* matrix = NULL;
 static BOOL running = TRUE;
@@ -81,6 +82,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszClassName = className;
     wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
+    // *** THIS IS THE NEW LINE ***
+    // Load the icon from the executable's resources and set it for the window class.
+    wc.hIcon = LoadIconW(hInstance, MAKEINTRESOURCEW(IDI_ICON1));
 
     if (!RegisterClassW(&wc)) {
         OutputDebugStringW(L"WinMain: Failed to register window class\n");
