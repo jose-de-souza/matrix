@@ -4,7 +4,7 @@
 #include <windows.h>
 
 typedef struct {
-    WCHAR characters[22]; // TRAIL_LENGTH
+    WCHAR characters[64]; // Increased to support max trail length
     int y_pos;
     float alpha;
 } FrozenTrail;
@@ -17,8 +17,10 @@ typedef struct {
     int char_width;
     size_t columns;
     int* drops;
-    WCHAR** trail_chars;
     BOOL* frozen;
+    WCHAR** trail_chars;
+    size_t* trail_lengths;
+    float* trail_alphas; // New array for active trail alpha values
     FrozenTrail** frozen_trails;
     size_t* frozen_trail_counts;
     size_t* frozen_trail_capacities;

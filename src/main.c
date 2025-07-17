@@ -4,6 +4,8 @@
 
 static Matrix* matrix = NULL;
 static BOOL running = TRUE;
+static POINT initialMousePos = { -1, -1 }; // Store initial mouse position
+static const int MOUSE_MOVE_THRESHOLD = 10; // Pixels to move before exiting
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
@@ -22,6 +24,31 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             running = FALSE;
             PostQuitMessage(0);
             return 0;
+        case WM_MOUSEMOVE: {
+            int xPos = LOWORD(lParam);
+            int yPos = HIWORD(lParam);
+            WCHAR debugMsg[256];
+            wsprintfW(debugMsg, L"WndProc: WM_MOUSEMOVE received at (%d, %d)\n", xPos, yPos);
+            OutputDebugStringW(debugMsg);
+
+            // Initialize mouse position on first movement
+            if (initialMousePos.x == -1 && initialMousePos.y == -1) {
+                initialMousePos.x = xPos;
+                initialMousePos.y = yPos;
+                OutputDebugStringW(L"WndProc: Initial mouse position set\n");
+                return 0;
+            }
+
+            // Calculate distance moved
+            int dx = abs(xPos - initialMousePos.x);
+            int dy = abs(yPos - initialMousePos.y);
+            if (dx > MOUSE_MOVE_THRESHOLD || dy > MOUSE_MOVE_THRESHOLD) {
+                OutputDebugStringW(L"WndProc: Mouse moved beyond threshold, exiting\n");
+                running = FALSE;
+                PostQuitMessage(0);
+            }
+            return 0;
+        }
         case WM_PAINT: {
             OutputDebugStringW(L"WndProc: WM_PAINT received\n");
             PAINTSTRUCT ps;
@@ -101,6 +128,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     OutputDebugStringW(L"WinMain: Matrix initialized successfully\n");
+
+    // Get initial mouse position
+    GetCursorPos(&initialMousePos);
+    WCHAR initMsg[256];
+    wsprintfW(initMsg, L"WinMain: Initial mouse position set to (%ld, %ld)\n", initialMousePos.x, initialMousePos.y);
+    OutputDebugStringW(initMsg);
 
     MSG msg;
     while (running) {
