@@ -63,7 +63,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    OutputDebugStringW(L"WinMain: Screen dimensions: %dx%d\n");
+    WCHAR debugMsg[256];
+    wsprintfW(debugMsg, L"WinMain: Screen dimensions: %d x %d\n", screenWidth, screenHeight);
+    OutputDebugStringW(debugMsg);
 
     HWND hwnd = CreateWindowExW(
         WS_EX_APPWINDOW,
@@ -114,7 +116,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         Matrix_update(matrix);
         InvalidateRect(hwnd, NULL, FALSE);
-        Sleep(10);
+        Sleep(50);
     }
 
     OutputDebugStringW(L"WinMain: Cleaning up\n");

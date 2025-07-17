@@ -11,29 +11,33 @@
 
 // Linear Congruential Generator for random numbers
 static unsigned int rng_next(unsigned int* state) {
-    *state = *state * 1103515245 + 12345;
-    return (*state >> 16) & 0x7FFFFFFF;
+    *state = (*state * 1664525 + 1013904223) & 0x7FFFFFFF;
+    return *state;
 }
 
 static int rng_int_range(unsigned int* state, int at_least, int less_than) {
     int range = less_than - at_least;
     if (range <= 0) return at_least;
-    unsigned int max = 0x7FFFFFFF;
-    unsigned int bucket_size = (max + 1) / (unsigned int)range;
-    unsigned int limit = bucket_size * (unsigned int)range;
-    unsigned int r;
-    do {
-        r = rng_next(state);
-    } while (r >= limit);
-    return at_least + (int)(r / bucket_size);
+    unsigned int r = rng_next(state);
+    return at_least + (r % range);
 }
 
 static float rng_float(unsigned int* state) {
-    return (float)rng_next(state) / (float)0x7FFFFFFF;
+    return (float)(rng_next(state) % 10000) / 10000.0f;
 }
 
 static WCHAR random_char(unsigned int* rng_state) {
-    return letters[rng_int_range(rng_state, 0, (int)(sizeof(letters) / sizeof(letters[0]) - 1))];
+    int len = (int)(sizeof(letters) / sizeof(letters[0]) - 1);
+    if (len <= 0) {
+        OutputDebugStringW(L"random_char: Error: letters array is empty\n");
+        return L'0';
+    }
+    int idx = rng_int_range(rng_state, 0, len);
+    WCHAR ch = letters[idx];
+    WCHAR debugMsg[256];
+    wsprintfW(debugMsg, L"random_char: Selected index %d, char U+%04X\n", idx, ch);
+    OutputDebugStringW(debugMsg);
+    return ch;
 }
 
 Matrix* Matrix_init(HWND hwnd, int width, int height) {
@@ -55,7 +59,7 @@ Matrix* Matrix_init(HWND hwnd, int width, int height) {
     HFONT font = CreateFontW(
         FONT_HEIGHT, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        ANTIALIASED_QUALITY, FF_MODERN, L"Consolas"
+        ANTIALIASED_QUALITY, FF_MODERN, L"MS Gothic"
     );
     if (!font) {
         OutputDebugStringW(L"Matrix_init: Failed to create font\n");
@@ -74,10 +78,15 @@ Matrix* Matrix_init(HWND hwnd, int width, int height) {
         ReleaseDC(hwnd, hdc);
         return NULL;
     }
-    int char_width = tm.tmAveCharWidth;
+    int char_width = tm.tmAveCharWidth + 4; // Increased padding for better spacing
     size_t columns = char_width > 0 ? (size_t)(width / char_width) : 0;
+    if (columns > 500) columns = 500; // Cap columns for performance
     SelectObject(hdc, old_font);
     ReleaseDC(hwnd, hdc);
+
+    WCHAR debugMsg[256];
+    wsprintfW(debugMsg, L"Matrix_init: char_width=%d, columns=%zu\n", char_width, columns);
+    OutputDebugStringW(debugMsg);
 
     if (columns == 0) {
         OutputDebugStringW(L"Matrix_init: Invalid columns (char_width=0)\n");
@@ -92,7 +101,7 @@ Matrix* Matrix_init(HWND hwnd, int width, int height) {
     matrix->height = height;
     matrix->char_width = char_width;
     matrix->columns = columns;
-    matrix->rng_state = (unsigned int)GetTickCount();
+    matrix->rng_state = (unsigned int)(GetTickCount() ^ 0xDEADBEEF);
     matrix->last_update = GetTickCount64();
 
     matrix->drops = (int*)calloc(columns, sizeof(int));
@@ -123,7 +132,9 @@ Matrix* Matrix_init(HWND hwnd, int width, int height) {
         matrix->frozen_trails[i] = NULL;
         matrix->frozen_trail_counts[i] = 0;
         matrix->frozen_trail_capacities[i] = 0;
-        matrix->drops[i] = -rng_int_range(&matrix->rng_state, 0, height / FONT_HEIGHT);
+        matrix->drops[i] = -rng_int_range(&matrix->rng_state, 0, height / FONT_HEIGHT / 2);
+        wsprintfW(debugMsg, L"Matrix_init: drop[%zu]=%d\n", i, matrix->drops[i]);
+        OutputDebugStringW(debugMsg);
     }
 
     OutputDebugStringW(L"Matrix_init: Initialization successful\n");
@@ -153,14 +164,18 @@ void Matrix_update(Matrix* matrix) {
     matrix->last_update = now;
 
     int screen_height_in_chars = matrix->height / FONT_HEIGHT;
+    WCHAR debugMsg[256];
 
     for (size_t i = 0; i < matrix->columns; i++) {
         if (matrix->frozen[i]) {
             if (matrix->frozen_trail_counts[i] == 0) {
                 matrix->frozen[i] = FALSE;
-                matrix->drops[i] = 0;
+                matrix->drops[i] = -rng_int_range(&matrix->rng_state, 0, screen_height_in_chars / 2);
+                wsprintfW(debugMsg, L"Matrix_update: Unfroze trail[%zu], reset drop to %d\n", i, matrix->drops[i]);
+                OutputDebugStringW(debugMsg);
             }
         } else {
+            // Shift characters down and add new random character
             for (size_t j = TRAIL_LENGTH - 1; j > 0; j--) {
                 matrix->trail_chars[i][j] = matrix->trail_chars[i][j - 1];
             }
@@ -168,7 +183,8 @@ void Matrix_update(Matrix* matrix) {
 
             matrix->drops[i]++;
 
-            if (matrix->drops[i] > screen_height_in_chars && rng_float(&matrix->rng_state) > 0.975f) {
+            // Randomly freeze trails or reset them
+            if (matrix->drops[i] > screen_height_in_chars && rng_float(&matrix->rng_state) > 0.95f) {
                 matrix->frozen[i] = TRUE;
                 if (matrix->frozen_trail_counts[i] >= matrix->frozen_trail_capacities[i]) {
                     size_t new_capacity = matrix->frozen_trail_capacities[i] == 0 ? 4 : matrix->frozen_trail_capacities[i] * 2;
@@ -184,19 +200,25 @@ void Matrix_update(Matrix* matrix) {
                 memcpy(trail->characters, matrix->trail_chars[i], TRAIL_LENGTH * sizeof(WCHAR));
                 trail->y_pos = matrix->drops[i] * FONT_HEIGHT;
                 trail->alpha = 1.0f;
-                matrix->drops[i] = -rng_int_range(&matrix->rng_state, 0, screen_height_in_chars);
+                matrix->drops[i] = -rng_int_range(&matrix->rng_state, 0, screen_height_in_chars / 2);
+                wsprintfW(debugMsg, L"Matrix_update: Froze trail[%zu], reset drop to %d\n", i, matrix->drops[i]);
+                OutputDebugStringW(debugMsg);
             }
         }
 
+        // Randomly change a character in the trail
         if (rng_float(&matrix->rng_state) < 0.1f) {
             size_t idx = rng_int_range(&matrix->rng_state, 1, TRAIL_LENGTH);
             matrix->trail_chars[i][idx] = random_char(&matrix->rng_state);
         }
 
+        // Fade out frozen trails
         for (size_t j = 0; j < matrix->frozen_trail_counts[i];) {
             matrix->frozen_trails[i][j].alpha -= FADE_RATE;
             if (matrix->frozen_trails[i][j].alpha <= 0) {
                 matrix->frozen_trails[i][j] = matrix->frozen_trails[i][--matrix->frozen_trail_counts[i]];
+                wsprintfW(debugMsg, L"Matrix_update: Removed faded frozen trail[%zu][%zu]\n", i, j);
+                OutputDebugStringW(debugMsg);
             } else {
                 j++;
             }
@@ -233,16 +255,15 @@ void Matrix_render(Matrix* matrix, HDC hdc) {
     DeleteObject(brush);
 
     for (size_t i = 0; i < matrix->columns; i++) {
-        int x = (int)i * matrix->char_width;
+        int x = (int)(i * matrix->char_width);
         for (size_t j = 0; j < matrix->frozen_trail_counts[i]; j++) {
             FrozenTrail* trail = &matrix->frozen_trails[i][j];
             for (size_t k = 0; k < TRAIL_LENGTH; k++) {
                 int y = trail->y_pos - (int)(k + 1) * FONT_HEIGHT;
-                if (y < 0) continue;
+                if (y < 0 || y > matrix->height) continue;
 
                 int gradient_brightness = 255 - (k * (255 / TRAIL_LENGTH));
                 if (gradient_brightness < 50) gradient_brightness = 50;
-                if (gradient_brightness > 255) gradient_brightness = 255;
                 int final_brightness = (int)(gradient_brightness * trail->alpha);
                 if (final_brightness < 5) continue;
 
@@ -256,15 +277,17 @@ void Matrix_render(Matrix* matrix, HDC hdc) {
     for (size_t i = 0; i < matrix->columns; i++) {
         if (matrix->frozen[i]) continue;
 
-        int x = (int)i * matrix->char_width;
+        int x = (int)(i * matrix->char_width);
         int y = matrix->drops[i] * FONT_HEIGHT;
+        WCHAR debugMsg[256];
+        wsprintfW(debugMsg, L"Matrix_render: Rendering trail[%zu] at x=%d, y=%d\n", i, x, y);
+        OutputDebugStringW(debugMsg);
 
         for (size_t j = 0; j < TRAIL_LENGTH; j++) {
             int ty = y - (int)(j + 1) * FONT_HEIGHT;
-            if (ty < 0) continue;
+            if (ty < 0 || ty > matrix->height) continue;
             int brightness = 255 - (j * (255 / TRAIL_LENGTH));
             if (brightness < 50) brightness = 50;
-            if (brightness > 255) brightness = 255;
             SetTextColor(mem_dc, RGB(0, (BYTE)brightness, 0));
             WCHAR ch_buf[2] = { matrix->trail_chars[i][j], 0 };
             TextOutW(mem_dc, x, ty, ch_buf, 1);
