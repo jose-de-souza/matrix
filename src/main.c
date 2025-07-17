@@ -10,6 +10,11 @@ static const int MOUSE_MOVE_THRESHOLD = 10; // Pixels to move before exiting
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+        // Handle the message to set the cursor
+        case WM_SETCURSOR:
+            // Set the cursor to NULL (invisible) and indicate we've handled the message.
+            SetCursor(NULL);
+            return TRUE;
         case WM_DESTROY:
             OutputDebugStringW(L"WndProc: WM_DESTROY received\n");
             running = FALSE;
@@ -81,9 +86,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.hInstance = hInstance;
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszClassName = className;
-    wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
-    // *** THIS IS THE NEW LINE ***
-    // Load the icon from the executable's resources and set it for the window class.
+    // We no longer need to set a class cursor since we handle WM_SETCURSOR
+    wc.hCursor = NULL; 
     wc.hIcon = LoadIconW(hInstance, MAKEINTRESOURCEW(IDI_ICON1));
 
     if (!RegisterClassW(&wc)) {
@@ -99,7 +103,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     OutputDebugStringW(debugMsg);
 
     HWND hwnd = CreateWindowExW(
-        WS_EX_APPWINDOW,
+        WS_EX_TOPMOST, // Use WS_EX_TOPMOST for true full-screen
         className,
         L"Matrix Screensaver",
         WS_POPUP,
@@ -122,6 +126,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
+    // The ShowCursor calls are no longer needed here.
 
     matrix = Matrix_init(hwnd, screenWidth, screenHeight);
     if (!matrix) {
@@ -133,7 +138,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     OutputDebugStringW(L"WinMain: Matrix initialized successfully\n");
 
-    // Get initial mouse position
     GetCursorPos(&initialMousePos);
     WCHAR initMsg[256];
     wsprintfW(initMsg, L"WinMain: Initial mouse position set to (%ld, %ld)\n", initialMousePos.x, initialMousePos.y);
@@ -157,6 +161,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     OutputDebugStringW(L"WinMain: Cleaning up\n");
+    // The cursor will be restored automatically by Windows when the app exits.
     Matrix_deinit(matrix);
     DestroyWindow(hwnd);
     OutputDebugStringW(L"WinMain: Exiting\n");
